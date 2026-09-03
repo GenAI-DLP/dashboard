@@ -9,7 +9,7 @@ from __future__ import annotations
 import streamlit as st
 
 import api_client
-from components import common
+from components import charts, common, kpi
 
 st.set_page_config(page_title="DLP 관리자 대시보드", layout="wide")
 st.title("DLP 관리자 대시보드")
@@ -52,4 +52,15 @@ def _sidebar() -> dict:
 _health_badge()
 filters = _sidebar()
 
-st.info("KPI·이벤트 테이블은 다음 단계에서 연결됩니다.")
+try:
+    stats = api_client.get_stats(filters["window"])
+except api_client.ApiError as exc:
+    st.error(f"통계 조회 실패: {exc}")
+    st.stop()
+
+kpi.render(stats)
+st.divider()
+charts.render(stats)
+
+# 이벤트 테이블·세션 드릴다운은 다음 커밋에서 연결.
+st.info("이벤트 테이블은 다음 단계에서 연결됩니다.")
