@@ -1,7 +1,7 @@
 """DLP 관리자 대시보드 — 엔트리.
 
 dlp-server 읽기 API(/events · /stats · /events/{id} · /vault-access)를 tail 하는 Streamlit 앱.
-KPI · 차트 · 이벤트 테이블 · 세션 드릴다운은 이후 커밋에서 채운다.
+상단 KPI · 차트 · 실시간 이벤트 테이블(자동 새로고침) · 행 선택 시 세션 드릴다운.
 """
 
 from __future__ import annotations
@@ -9,7 +9,7 @@ from __future__ import annotations
 import streamlit as st
 
 import api_client
-from components import charts, common, event_table, kpi
+from components import charts, common, event_table, kpi, session_detail
 
 st.set_page_config(page_title="DLP 관리자 대시보드", layout="wide")
 st.title("DLP 관리자 대시보드")
@@ -93,8 +93,20 @@ def _live() -> None:
     charts.render(stats)
     st.divider()
     selected = event_table.render(_client_filter(rows))
-    if selected:
+    if selected and selected != st.session_state.get("sel_session"):
         st.session_state["sel_session"] = selected
+        st.rerun(scope="app")
 
 
 _live()
+
+# 드릴다운은 fragment 밖 — 자동 새로고침이 사용자가 보는 상세를 흔들지 않게.
+_sel = st.session_state.get("sel_session")
+if _sel:
+    st.divider()
+    top = st.columns([5, 1])
+    top[0].subheader("세션 상세")
+    if top[1].button("닫기"):
+        del st.session_state["sel_session"]
+        st.rerun()
+    session_detail.render(_sel)
