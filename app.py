@@ -9,7 +9,7 @@ from __future__ import annotations
 import streamlit as st
 
 import api_client
-from components import charts, common, kpi
+from components import charts, common, event_table, kpi
 
 st.set_page_config(page_title="DLP 관리자 대시보드", layout="wide")
 st.title("DLP 관리자 대시보드")
@@ -52,15 +52,49 @@ def _sidebar() -> dict:
 _health_badge()
 filters = _sidebar()
 
-try:
-    stats = api_client.get_stats(filters["window"])
-except api_client.ApiError as exc:
-    st.error(f"통계 조회 실패: {exc}")
-    st.stop()
 
-kpi.render(stats)
-st.divider()
-charts.render(stats)
+def _client_filter(rows: list[dict]) -> list[dict]:
+    """/events 파라미터에 없는 축(목적·엔티티) + 다중 선택 값은 여기서 거른다."""
+    out = []
+    for ev in rows:
+        if filters["directions"] and ev.get("direction") not in filters["directions"]:
+            continue
+        if filters["verdicts"] and ev.get("verdict_action") not in filters["verdicts"]:
+            continue
+        if filters["purposes"] and (ev.get("purpose") or "unknown") not in filters["purposes"]:
+            continue
+        if filters["entities"]:
+            types = {e.get("type") for e in ev.get("entities_summary", [])}
+            if not types & set(filters["entities"]):
+                continue
+        if filters["only_fail"] and not ev.get("fail_policy_applied"):
+            continue
+        out.append(ev)
+    return out
 
-# 이벤트 테이블·세션 드릴다운은 다음 커밋에서 연결.
-st.info("이벤트 테이블은 다음 단계에서 연결됩니다.")
+
+@st.fragment(run_every=filters["interval"])
+def _live() -> None:
+    try:
+        stats = api_client.get_stats(filters["window"])
+        rows = api_client.get_events(
+            limit=300,
+            direction=filters["directions"][0] if len(filters["directions"]) == 1 else None,
+            verdict=filters["verdicts"][0] if len(filters["verdicts"]) == 1 else None,
+            session_id=filters["session_q"] or None,
+            since=common.window_since(filters["window"]),
+        )
+    except api_client.ApiError as exc:
+        st.error(f"조회 실패: {exc}")
+        return
+
+    kpi.render(stats)
+    st.divider()
+    charts.render(stats)
+    st.divider()
+    selected = event_table.render(_client_filter(rows))
+    if selected:
+        st.session_state["sel_session"] = selected
+
+
+_live()
