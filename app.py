@@ -93,8 +93,11 @@ def _live() -> None:
     charts.render(stats)
     st.divider()
     selected = event_table.render(_client_filter(rows))
-    if selected and selected != st.session_state.get("sel_session"):
-        st.session_state["sel_session"] = selected
+    # 테이블 선택이 "바뀔 때만" 드릴다운을 연다.
+    if selected != st.session_state.get("_tbl_sel"):
+        st.session_state["_tbl_sel"] = selected
+        if selected:
+            st.session_state["sel_session"] = selected
         st.rerun(scope="app")
 
 
@@ -107,6 +110,6 @@ if _sel:
     top = st.columns([5, 1])
     top[0].subheader("세션 상세")
     if top[1].button("닫기"):
-        del st.session_state["sel_session"]
+        st.session_state.pop("sel_session", None)  # _tbl_sel 은 남겨 재오픈 방지
         st.rerun()
     session_detail.render(_sel)
