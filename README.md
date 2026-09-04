@@ -23,7 +23,7 @@
 ### Python 환경 (전용 venv)
 
 ```powershell
-cd C:\Users\shlee\AIC\dashboard
+# dashboard 레포 루트에서
 python -m venv .venv
 .venv\Scripts\python -m pip install -r requirements.txt
 ```
@@ -36,7 +36,7 @@ python -m venv .venv
 - `dlp-server` 레포에서 스키마·정책을 먼저 준비한다:
 
 ```powershell
-cd C:\Users\shlee\AIC\dlp-server
+# dlp-server 레포 루트에서
 python scripts/apply_schema.py
 python scripts/seed_policy.py      # 정책이 없으면 모든 판정이 tokenize 폴백된다
 ```
@@ -50,7 +50,7 @@ python scripts/seed_policy.py      # 정책이 없으면 모든 판정이 tokeni
 ### 터미널 A — dlp-server (:8000 HTTP, :50051 gRPC)
 
 ```powershell
-cd C:\Users\shlee\AIC\dlp-server
+# dlp-server 레포 루트에서
 $env:DLP_LOG_SINK = "pg"
 python -m app.main
 ```
@@ -66,7 +66,7 @@ python scripts/demo_seed.py --reset
 ### 터미널 B — dashboard (:8501)
 
 ```powershell
-cd C:\Users\shlee\AIC\dashboard
+# dashboard 레포 루트에서
 # dlp-server가 localhost:8000이 아니면: $env:DLP_API_BASE = "http://<host>:8000"
 .venv\Scripts\streamlit run app.py
 ```
@@ -107,20 +107,38 @@ PostgreSQL + 터미널 A(`python -m app.main`) + 터미널 B(`streamlit run`)를
 | `demo-multiturn` | "김영희입니다" → "주민번호 900101-1234568" → "계좌 110-234-567890" (3턴, 같은 세션) | 3턴째 🔴 block | 세션 클릭 → risk_score 추이 0 → 0.25 → 0.85, 3턴째 0.6 초과로 차단 |
 | `demo-detok` | input(요약 요청, 토큰화) → output(토큰 라벨 포함 응답) | output 🟡 transform | 세션 클릭 → input/output 타임라인, "토큰 복원 시도" 표에 `<PII:RRN:1>` 복원 기록 |
 
-### B. 라이브 단건 (gRPC 요청 1개)
+### B. 추가 테스트 — 대시보드를 띄워둔 채로 더 넣어보기
 
-터미널 A 서버가 떠 있는 상태에서 다른 창:
+터미널 A(`python -m app.main`) 서버가 떠 있는 상태에서, **다른 터미널**에서:
+
+**제일 간단: gRPC 요청 1개**
 
 ```powershell
-cd C:\Users\shlee\AIC\dlp-server
+# dlp-server 레포 루트에서
 python scripts/test_grpc_client.py
 ```
 
-`Inspect` 요청 1개가 실제 서버를 거치고 몇 초 뒤 이벤트 테이블 맨 위에 새 행이 뜬다.
+`log_events`에 딱 1행 추가된다. 대시보드 이벤트 테이블을 보고 있으면 (사이드바 자동 새로고침
+주기, 3초면 최대 3초 안에) 맨 위에 새 행이 뜨는 걸 눈으로 확인할 수 있다.
+
+**여러 개 한꺼번에: 시더 재실행 (`--reset` 없이)**
+
+```powershell
+# dlp-server 레포 루트에서
+python scripts/demo_seed.py
+```
+
+기존 데이터를 지우지 않고 같은 세션 이름으로 9개 행이 더 쌓인다. 테이블·KPI(총 판정 수)·차트가
+순차적으로 갱신되는 걸 볼 수 있다.
+
+> 현재는 **폴링**(3~5초 주기로 `/events`를 다시 조회) 방식이다. 즉시 push는 아니다. 추후 SSE로
+> 교체 예정.
 
 ### C. 풀 E2E (프록시 경유)
 
-`직원 PC → dlp-proxy-server → 외부 LLM` 경로.
+`직원 PC → dlp-proxy-server → 외부 LLM` 경로로 실제 트래픽을 흘리는 방식. 프록시팀(데모 2)·
+게이트웨이팀(데모 1) 담당이고, 대시보드 쪽 준비물은 없다 — 프록시가 판정을 받으면 dlp-server가
+로그를 남기고 대시보드에 그대로 뜬다.
 
 ---
 
