@@ -10,9 +10,9 @@ export const WINDOWS: Record<string, string> = {
 
 // verdict 3값 고정 색 (allow=녹색 · transform=호박 · block=적색)
 export const VERDICT_COLORS: Record<VerdictAction, string> = {
-  allow: '#2E7D32',
-  transform: '#F9A825',
-  block: '#C62828',
+  allow: 'var(--color-allow)',
+  transform: 'var(--color-transform)',
+  block: 'var(--color-block)',
 }
 
 export const VERDICT_EMOJI: Record<VerdictAction, string> = {

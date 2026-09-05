@@ -1,139 +1,118 @@
-import type { Direction, VerdictAction } from '../api/types'
-import { ENTITY_TYPES, PURPOSES, VERDICT_EMOJI, WINDOWS } from '../lib/constants'
+import type { Stats, VerdictAction } from '../api/types'
+import { Card, FilterRow, SearchInput, SegmentedControl } from './ds'
+import { ENTITY_TYPES, PURPOSES, WINDOWS } from '../lib/constants'
 import type { Filters } from '../lib/filters'
-import { REFRESH_OPTIONS } from '../lib/filters'
 
-const DIRECTIONS: Direction[] = ['input', 'output']
 const VERDICTS: VerdictAction[] = ['allow', 'transform', 'block']
 
 function toggle<T>(list: T[], value: T): T[] {
   return list.includes(value) ? list.filter((v) => v !== value) : [...list, value]
 }
 
+function purposeCount(stats: Stats | null, purpose: string): number {
+  return stats?.by_purpose.find((r) => r.purpose === purpose)?.count ?? 0
+}
+
+function entityCount(stats: Stats | null, type: string): number {
+  return stats?.by_entity_type.find((r) => r.type === type)?.count ?? 0
+}
+
 export function Sidebar({
   filters,
   onChange,
+  stats,
 }: {
   filters: Filters
   onChange: (next: Filters) => void
+  stats: Stats | null
 }) {
   const set = <K extends keyof Filters>(key: K, value: Filters[K]) =>
     onChange({ ...filters, [key]: value })
 
-  const refreshLabel =
-    Object.entries(REFRESH_OPTIONS).find(([, v]) => v === filters.intervalMs)?.[0] ??
-    '끄기'
+  const directionValue = filters.directions.length === 1 ? filters.directions[0] : 'all'
 
   return (
-    <aside className="w-64 shrink-0 space-y-4 border-r p-4 text-sm">
-      <h2 className="font-semibold">필터</h2>
+    <aside className="flex w-64 shrink-0 flex-col gap-3 p-4">
+      <Card padding="md">
+        <SearchInput
+          value={filters.sessionQ}
+          onChange={(v) => set('sessionQ', v.trim())}
+          placeholder="세션 검색 (UUID 또는 원본 ID)"
+        />
 
-      <div>
-        <label className="mb-1 block text-xs text-gray-500">기간</label>
-        <select
-          className="w-full border px-1 py-0.5"
-          value={filters.window}
-          onChange={(e) => set('window', e.target.value)}
-        >
-          {Object.entries(WINDOWS).map(([label, code]) => (
-            <option key={code} value={code}>
-              {label}
-            </option>
-          ))}
-        </select>
-      </div>
+        <div className="mt-5 flex flex-col gap-2.5">
+          <div className="text-[13px] font-semibold text-muted">조회 기간</div>
+          <SegmentedControl
+            columns={2}
+            value={filters.window}
+            onChange={(v) => set('window', v)}
+            options={Object.entries(WINDOWS).map(([label, code]) => ({
+              value: code,
+              label,
+            }))}
+          />
+        </div>
 
-      <fieldset>
-        <legend className="mb-1 text-xs text-gray-500">방향</legend>
-        {DIRECTIONS.map((d) => (
-          <label key={d} className="mr-3 inline-flex items-center gap-1">
-            <input
-              type="checkbox"
-              checked={filters.directions.includes(d)}
-              onChange={() => set('directions', toggle(filters.directions, d))}
-            />
-            {d}
-          </label>
-        ))}
-      </fieldset>
+        <div className="mt-5 flex flex-col gap-2.5">
+          <div className="text-[13px] font-semibold text-muted">방향</div>
+          <SegmentedControl
+            columns={3}
+            value={directionValue}
+            onChange={(v) => set('directions', v === 'all' ? [] : [v])}
+            options={[
+              { value: 'all', label: '전체' },
+              { value: 'input', label: 'input' },
+              { value: 'output', label: 'output' },
+            ]}
+          />
+        </div>
+      </Card>
 
-      <fieldset>
-        <legend className="mb-1 text-xs text-gray-500">판정</legend>
-        {VERDICTS.map((v) => (
-          <label key={v} className="block">
-            <input
-              type="checkbox"
+      <Card padding="md">
+        <div className="text-[13px] font-semibold text-muted">판정</div>
+        <div className="mt-1 flex flex-col">
+          {VERDICTS.map((v) => (
+            <FilterRow
+              key={v}
+              label={v}
+              dotTone={v}
+              count={stats?.verdict[v]}
               checked={filters.verdicts.includes(v)}
               onChange={() => set('verdicts', toggle(filters.verdicts, v))}
-            />{' '}
-            {VERDICT_EMOJI[v]} {v}
-          </label>
-        ))}
-      </fieldset>
+            />
+          ))}
+        </div>
+      </Card>
 
-      <fieldset>
-        <legend className="mb-1 text-xs text-gray-500">목적</legend>
-        {PURPOSES.map((p) => (
-          <label key={p} className="block">
-            <input
-              type="checkbox"
+      <Card padding="md">
+        <div className="text-[13px] font-semibold text-muted">목적</div>
+        <div className="mt-1 flex flex-col">
+          {PURPOSES.map((p) => (
+            <FilterRow
+              key={p}
+              label={p}
+              count={purposeCount(stats, p)}
               checked={filters.purposes.includes(p)}
               onChange={() => set('purposes', toggle(filters.purposes, p))}
-            />{' '}
-            {p}
-          </label>
-        ))}
-      </fieldset>
+            />
+          ))}
+        </div>
+      </Card>
 
-      <fieldset>
-        <legend className="mb-1 text-xs text-gray-500">엔티티 타입</legend>
-        {ENTITY_TYPES.map((t) => (
-          <label key={t} className="block">
-            <input
-              type="checkbox"
+      <Card padding="md">
+        <div className="text-[13px] font-semibold text-muted">엔티티 타입</div>
+        <div className="mt-1 flex flex-col">
+          {ENTITY_TYPES.map((t) => (
+            <FilterRow
+              key={t}
+              label={t}
+              count={entityCount(stats, t)}
               checked={filters.entities.includes(t)}
               onChange={() => set('entities', toggle(filters.entities, t))}
-            />{' '}
-            {t}
-          </label>
-        ))}
-      </fieldset>
-
-      <div>
-        <label className="mb-1 block text-xs text-gray-500">
-          세션 검색 (UUID 또는 원본 ID)
-        </label>
-        <input
-          type="text"
-          className="w-full border px-1 py-0.5"
-          value={filters.sessionQ}
-          onChange={(e) => set('sessionQ', e.target.value.trim())}
-        />
-      </div>
-
-      <label className="block">
-        <input
-          type="checkbox"
-          checked={filters.onlyFail}
-          onChange={(e) => set('onlyFail', e.target.checked)}
-        />{' '}
-        fail-closed 만
-      </label>
-
-      <fieldset>
-        <legend className="mb-1 text-xs text-gray-500">자동 새로고침</legend>
-        {Object.keys(REFRESH_OPTIONS).map((label) => (
-          <label key={label} className="mr-3 inline-flex items-center gap-1">
-            <input
-              type="radio"
-              name="refresh"
-              checked={refreshLabel === label}
-              onChange={() => set('intervalMs', REFRESH_OPTIONS[label])}
             />
-            {label}
-          </label>
-        ))}
-      </fieldset>
+          ))}
+        </div>
+      </Card>
     </aside>
   )
 }

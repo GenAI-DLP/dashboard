@@ -23,3 +23,9 @@ export function fmtTs(iso: string | null | undefined): string {
 export function shortSid(sessionId: string | null | undefined): string {
   return (sessionId ?? '').slice(0, 8)
 }
+
+/** Date → `HH:MM:SS` (브라우저 로컬 시각). */
+export function fmtClock(date: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
+}
