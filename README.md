@@ -4,14 +4,13 @@
 로그(`log_events`)를 읽기 API로 tail 해 탐지·목적·조치·지연·차단 현황을 실시간으로 보여준다.
 
 전체 구조는 [`GenAI-DLP/docs`](https://github.com/GenAI-DLP/docs)의
-`architecture/architecture-index.md`(대시보드 = Streamlit), 
-감사 로그 포맷은 `schemas/dlp-server/log-event.md` 참조.
+`architecture/architecture-index.md`, 감사 로그 포맷은 `schemas/dlp-server/log-event.md` 참조.
 
 ```
 [dlp-server] --(구조화 감사 로그)--> PostgreSQL log_events
      |  GET /events  /events/{id}  /stats  /vault-access   (HTTP :8000)
      v
-[dashboard]  Streamlit :8501   <-- 이 레포
+[dashboard]  React (Vite) :5173   <-- 이 레포
 ```
 
 대시보드는 트래픽 경로에 끼지 않고, `dlp-server`가 이미 적재한 감사 로그만 읽는다.
@@ -20,12 +19,11 @@
 
 ## 사전 준비
 
-### Python 환경 (전용 venv)
+### Node 환경
 
 ```powershell
 # dashboard 레포 루트에서
-python -m venv .venv
-.venv\Scripts\python -m pip install -r requirements.txt
+npm install
 ```
 
 ### PostgreSQL + dlp-server
@@ -63,15 +61,15 @@ python -m app.main
 python scripts/demo_seed.py --reset
 ```
 
-### 터미널 B — dashboard (:8501)
+### 터미널 B — dashboard (:5173)
 
 ```powershell
 # dashboard 레포 루트에서
-# dlp-server가 localhost:8000이 아니면: $env:DLP_API_BASE = "http://<host>:8000"
-.venv\Scripts\streamlit run app.py
+# dlp-server가 localhost:8000이 아니면: $env:VITE_API_BASE = "http://<host>:8000"
+npm run dev
 ```
 
-**http://localhost:8501** 접속. 상단에 `🟢 dlp-server 연결됨 · DB ok`가 뜨면 정상.
+**http://localhost:5173** 접속. 상단에 `🟢 dlp-server 연결됨 · DB ok`가 뜨면 정상.
 
 ---
 
@@ -91,7 +89,7 @@ python scripts/demo_seed.py --reset
 
 ## 시연 시나리오
 
-PostgreSQL + 터미널 A(`python -m app.main`) + 터미널 B(`streamlit run`)를 켜둔 상태에서
+PostgreSQL + 터미널 A(`python -m app.main`) + 터미널 B(`npm run dev`)를 켜둔 상태에서
 아래 중 하나로 이벤트를 만들고 화면 갱신을 본다.
 
 ### A. 시더 한 방
@@ -136,9 +134,8 @@ python scripts/demo_seed.py
 
 ### C. 풀 E2E (프록시 경유)
 
-`직원 PC → dlp-proxy-server → 외부 LLM` 경로로 실제 트래픽을 흘리는 방식. 프록시팀(데모 2)·
-게이트웨이팀(데모 1) 담당이고, 대시보드 쪽 준비물은 없다 — 프록시가 판정을 받으면 dlp-server가
-로그를 남기고 대시보드에 그대로 뜬다.
+`직원 PC → dlp-proxy-server → 외부 LLM` 경로로 실제 트래픽을 흘리는 방식. 
+프록시가 판정을 받으면 dlp-server가 로그를 남기고 대시보드에 그대로 뜬다.
 
 ---
 
@@ -146,9 +143,7 @@ python scripts/demo_seed.py
 
 | 환경변수 | 의미 |
 |---|---|
-| `DLP_API_BASE` | `dlp-server` HTTP API 주소 (기본 `http://localhost:8000`) |
-
-포트 등은 `.streamlit/config.toml`.
+| `VITE_API_BASE` | `dlp-server` HTTP API 주소 (기본 `http://localhost:8000`) |
 
 ## 원칙
 
