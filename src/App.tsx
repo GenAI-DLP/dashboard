@@ -1,7 +1,9 @@
 import { useCallback, useState } from 'react'
 import { getEvents, getStats } from './api/client'
 import type { Event, Stats } from './api/types'
+import { Charts } from './components/Charts'
 import { HealthCaption, HealthError } from './components/Header'
+import { Kpi } from './components/Kpi'
 import { Sidebar } from './components/Sidebar'
 import { useHealth } from './hooks/useHealth'
 import { usePolling } from './hooks/usePolling'
@@ -47,9 +49,15 @@ function App() {
       <main className="flex-1 p-4">
         <HealthCaption data={health.data} />
         {error && <p className="text-red-600">조회 실패: {error}</p>}
-        {/* KPI · 차트 · 이벤트 테이블 · 세션 드릴다운은 다음 커밋에서 이어붙임 */}
+        {stats && (
+          <div className="mt-4 space-y-4">
+            <Kpi stats={stats} />
+            <Charts stats={stats} />
+          </div>
+        )}
+        {/* 이벤트 테이블 · 세션 드릴다운은 다음 커밋에서 이어붙임 */}
         <p className="mt-4 text-sm text-gray-500">
-          이벤트 {filteredEvents.length}건 · 총 판정 {stats?.totals.events ?? 0}
+          이벤트 {filteredEvents.length}건
         </p>
       </main>
     </div>
