@@ -49,10 +49,14 @@ function App() {
 
   usePolling(refresh, filters.intervalMs, health.status === 'ok')
 
+  const filteredEvents = clientFilter(events, filters)
+  const selectedVisible =
+    !!selectedSessionId && filteredEvents.some((e) => e.session_id === selectedSessionId)
+  const visibleSessionId = selectedVisible ? selectedSessionId : null
+
   if (health.status === 'loading') return null
 
   const connected = health.status === 'ok'
-  const filteredEvents = clientFilter(events, filters)
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -96,13 +100,13 @@ function App() {
             <>
               <EventTable
                 rows={filteredEvents}
-                selectedSessionId={selectedSessionId}
+                selectedSessionId={visibleSessionId}
                 onSelect={setSelectedSessionId}
               />
-              {selectedSessionId && (
+              {visibleSessionId && (
                 <SessionDetail
-                  key={selectedSessionId}
-                  sessionId={selectedSessionId}
+                  key={visibleSessionId}
+                  sessionId={visibleSessionId}
                   onClose={() => setSelectedSessionId(null)}
                 />
               )}

@@ -31,7 +31,7 @@ export function EventTable({
   return (
     <div className="overflow-hidden rounded-xl bg-surface">
       {rows.length === 0 ? (
-        <p className="p-4 text-sm text-muted">표시할 이벤트가 없습니다만.</p>
+        <p className="p-4 text-sm text-muted">표시할 이벤트가 없습니다.</p>
       ) : (
         <Table>
           <thead>
