@@ -58,7 +58,7 @@ function App() {
         onIntervalChange={(intervalMs) => setFilters((f) => ({ ...f, intervalMs }))}
       />
       <div className="flex flex-1">
-        <Sidebar filters={filters} onChange={setFilters} />
+        <Sidebar filters={filters} onChange={setFilters} stats={stats} />
         <main className="flex-1 p-4">
           {!connected && (
             <ConnectionError error={health.status === 'error' ? health.error : undefined} />

@@ -1,5 +1,3 @@
-import { BASE_URL } from '../api/client'
-
 export function ConnectionError({ error }: { error?: string }) {
   return (
     <div className="rounded-xl bg-block-bg p-4">
