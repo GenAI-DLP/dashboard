@@ -7,6 +7,8 @@ export function MetricCard({
   delta,
   caption,
   progress,
+  valueTone,
+  size = 'lg',
 }: {
   label: string
   value: string | number
@@ -14,12 +16,18 @@ export function MetricCard({
   delta?: string
   caption?: string
   progress?: number
+  valueTone?: 'block'
+  size?: 'lg' | 'md'
 }) {
+  const valueSize = size === 'lg' ? 'text-[34px] tracking-[-0.03em]' : 'text-[26px] tracking-[-0.02em]'
+  const valueColor = valueTone === 'block' ? 'text-block-text' : 'text-strong'
+  const topGap = size === 'lg' ? 'mt-3' : 'mt-2.5'
+
   return (
-    <Card padding="md">
+    <Card padding={size === 'lg' ? 'md' : 'sm'}>
       <div className="text-sm font-semibold text-muted">{label}</div>
-      <div className="mt-3 flex items-baseline gap-1">
-        <span className="text-[34px] font-bold tracking-[-0.03em] text-strong">{value}</span>
+      <div className={`${topGap} flex items-baseline gap-1`}>
+        <span className={`font-bold ${valueSize} ${valueColor}`}>{value}</span>
         {unit && <span className="text-base font-semibold text-muted">{unit}</span>}
       </div>
       {(delta || caption) && (
