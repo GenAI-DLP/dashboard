@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { SegmentedControl, StatusDot } from './ds'
-import { REFRESH_OPTIONS } from '../lib/filters'
+import { STATS_REFRESH_OPTIONS } from '../lib/filters'
 import { fmtClock } from '../lib/format'
 
 export function AppHeader({
@@ -11,12 +11,12 @@ export function AppHeader({
 }: {
   connected: boolean
   lastUpdated: Date | null
-  intervalMs: number | null
-  onIntervalChange: (value: number | null) => void
+  intervalMs: number
+  onIntervalChange: (value: number) => void
 }) {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const refreshLabel =
-    Object.entries(REFRESH_OPTIONS).find(([, v]) => v === intervalMs)?.[0] ?? '끄기'
+    Object.entries(STATS_REFRESH_OPTIONS).find(([, v]) => v === intervalMs)?.[0] ?? '5초'
 
   return (
     <header className="relative z-40 flex h-16 items-center gap-4 bg-surface px-7">
@@ -56,16 +56,19 @@ export function AppHeader({
           <div className="absolute top-[46px] right-0 z-50 w-72 rounded-xl bg-surface p-5 text-left shadow-[0_12px_32px_rgba(0,0,0,0.12),0_2px_8px_rgba(0,0,0,0.06)]">
             <div className="text-base font-bold text-strong">환경설정</div>
             <div className="mt-4 flex flex-col gap-2.5">
-              <div className="text-[13px] font-semibold text-muted">자동 새로고침</div>
+              <div className="text-[13px] font-semibold text-muted">통계 갱신 주기</div>
               <SegmentedControl
+                columns={2}
                 value={refreshLabel}
-                onChange={(label) => onIntervalChange(REFRESH_OPTIONS[label])}
-                options={Object.keys(REFRESH_OPTIONS).map((label) => ({
+                onChange={(label) => onIntervalChange(STATS_REFRESH_OPTIONS[label])}
+                options={Object.keys(STATS_REFRESH_OPTIONS).map((label) => ({
                   value: label,
                   label,
                 }))}
               />
-              <div className="text-[13px] text-muted">폴링 주기는 서버 부하에 영향을 줍니다.</div>
+              <div className="text-[13px] text-muted">
+                KPI·차트 집계 주기입니다.
+              </div>
             </div>
           </div>
         )}
