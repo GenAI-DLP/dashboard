@@ -1,1 +1,59 @@
 @import "tailwindcss";
+@import "pretendard/dist/web/variable/pretendardvariable.css";
+
+@theme {
+  --font-sans:
+    'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont,
+    system-ui, Roboto, sans-serif;
+
+  /* 배경 */
+  --color-canvas: #f2f4f6;
+  --color-surface: #ffffff;
+  --color-surface-subtle: #f9fafb;
+  --color-surface-muted: #f2f4f6;
+  --color-surface-danger-subtle: #fef7f7;
+
+  /* 테두리 */
+  --color-border: #e5e8eb;
+  --color-border-subtle: #ebeef0;
+  --color-border-danger-subtle: #f5e4e6;
+
+  /* 텍스트 */
+  --color-strong: #191f28;
+  --color-body: #333d4b;
+  --color-secondary: #4e5968;
+  --color-muted: #8b95a1;
+  --color-faint: #b0b8c1;
+
+  /* 브랜드 */
+  --color-primary: #3182f6;
+  --color-primary-hover: #1b64da;
+  --color-primary-bg: #e8f3ff;
+  --color-primary-bg-strong: #c9defa;
+
+  /* 판정 3색 (고정, 다른 용도로 재사용 금지) */
+  --color-allow: #15c39a;
+  --color-allow-text: #0fa98f;
+  --color-allow-bg: #e7f8f4;
+
+  --color-transform: #ffa92b;
+  --color-transform-text: #c57d00;
+  --color-transform-bg: #fff4e0;
+
+  --color-block: #f04452;
+  --color-block-text: #e02b3a;
+  --color-block-bg: #feecee;
+
+  /* 라운드 */
+  --radius-xs: 8px;
+  --radius-sm: 10px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+}
+
+body {
+  background: var(--color-canvas);
+  color: var(--color-body);
+  font-variant-numeric: tabular-nums;
+}
