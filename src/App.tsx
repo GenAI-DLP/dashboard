@@ -2,8 +2,10 @@ import { useCallback, useState } from 'react'
 import { getEvents, getStats } from './api/client'
 import type { Event, Stats } from './api/types'
 import { Charts } from './components/Charts'
+import { EventTable } from './components/EventTable'
 import { HealthCaption, HealthError } from './components/Header'
 import { Kpi } from './components/Kpi'
+import { SessionDetail } from './components/SessionDetail'
 import { Sidebar } from './components/Sidebar'
 import { useHealth } from './hooks/useHealth'
 import { usePolling } from './hooks/usePolling'
@@ -16,6 +18,7 @@ function App() {
   const [stats, setStats] = useState<Stats | null>(null)
   const [events, setEvents] = useState<Event[]>([])
   const [error, setError] = useState<string | null>(null)
+  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
 
   const refresh = useCallback(() => {
     Promise.all([
@@ -55,10 +58,28 @@ function App() {
             <Charts stats={stats} />
           </div>
         )}
-        {/* 이벤트 테이블 · 세션 드릴다운은 다음 커밋에서 이어붙임 */}
-        <p className="mt-4 text-sm text-gray-500">
-          이벤트 {filteredEvents.length}건
-        </p>
+        <div className="mt-4">
+          <EventTable
+            rows={filteredEvents}
+            selectedSessionId={selectedSessionId}
+            onSelect={setSelectedSessionId}
+          />
+        </div>
+        {selectedSessionId && (
+          <div className="mt-4">
+            <div className="mb-2 flex items-center justify-between">
+              <h2 className="font-semibold">세션 상세</h2>
+              <button
+                type="button"
+                className="rounded border px-2 py-1 text-sm"
+                onClick={() => setSelectedSessionId(null)}
+              >
+                닫기
+              </button>
+            </div>
+            <SessionDetail key={selectedSessionId} sessionId={selectedSessionId} />
+          </div>
+        )}
       </main>
     </div>
   )
