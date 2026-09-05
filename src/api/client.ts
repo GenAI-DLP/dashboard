@@ -14,14 +14,18 @@ export class ApiError extends Error {}
 
 type Params = Record<string, string | number | boolean | null | undefined>
 
-async function apiGet<T>(path: string, params: Params = {}): Promise<T> {
+function buildUrl(path: string, params: Params = {}): string {
   const search = new URLSearchParams()
   for (const [key, value] of Object.entries(params)) {
     if (value === null || value === undefined || value === '') continue
     search.set(key, String(value))
   }
   const query = search.toString()
-  const url = `${BASE_URL}${path}${query ? `?${query}` : ''}`
+  return `${BASE_URL}${path}${query ? `?${query}` : ''}`
+}
+
+async function apiGet<T>(path: string, params: Params = {}): Promise<T> {
+  const url = buildUrl(path, params)
 
   let res: Response
   try {
@@ -59,6 +63,20 @@ export function getEvents(options: {
 
 export function getSession(sessionId: string): Promise<Event[]> {
   return apiGet(`/events/${sessionId}`)
+}
+
+/** /events/stream(SSE) URL. 필터 의미는 getEvents 와 동일(direction/verdict/sessionId 만). */
+export function streamEventsUrl(options: {
+  direction?: string | null
+  verdict?: string | null
+  sessionId?: string | null
+}): string {
+  const { direction, verdict, sessionId } = options
+  return buildUrl('/events/stream', {
+    direction,
+    verdict,
+    session_id: sessionId,
+  })
 }
 
 export function getStats(window: string = '1h'): Promise<Stats> {
