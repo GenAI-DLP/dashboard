@@ -1,9 +1,10 @@
 import { useCallback, useState } from 'react'
 import { getEvents, getStats } from './api/client'
 import type { Event, Stats } from './api/types'
+import { AppHeader } from './components/AppHeader'
 import { Charts } from './components/Charts'
 import { EventTable } from './components/EventTable'
-import { HealthCaption, HealthError } from './components/Header'
+import { ConnectionError } from './components/Header'
 import { Kpi } from './components/Kpi'
 import { SessionDetail } from './components/SessionDetail'
 import { Sidebar } from './components/Sidebar'
@@ -19,6 +20,7 @@ function App() {
   const [events, setEvents] = useState<Event[]>([])
   const [error, setError] = useState<string | null>(null)
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
 
   const refresh = useCallback(() => {
     Promise.all([
@@ -35,6 +37,7 @@ function App() {
         setStats(s)
         setEvents(rows)
         setError(null)
+        setLastUpdated(new Date())
       })
       .catch((exc) => setError(String(exc)))
   }, [filters])
@@ -42,45 +45,55 @@ function App() {
   usePolling(refresh, filters.intervalMs, health.status === 'ok')
 
   if (health.status === 'loading') return null
-  if (health.status === 'error') return <HealthError error={health.error} />
 
+  const connected = health.status === 'ok'
   const filteredEvents = clientFilter(events, filters)
 
   return (
-    <div className="flex min-h-screen">
-      <Sidebar filters={filters} onChange={setFilters} />
-      <main className="flex-1 p-4">
-        <HealthCaption data={health.data} />
-        {error && <p className="text-red-600">조회 실패: {error}</p>}
-        {stats && (
-          <div className="mt-4 space-y-4">
-            <Kpi stats={stats} />
-            <Charts stats={stats} />
-          </div>
-        )}
-        <div className="mt-4">
-          <EventTable
-            rows={filteredEvents}
-            selectedSessionId={selectedSessionId}
-            onSelect={setSelectedSessionId}
-          />
-        </div>
-        {selectedSessionId && (
-          <div className="mt-4">
-            <div className="mb-2 flex items-center justify-between">
-              <h2 className="font-semibold">세션 상세</h2>
-              <button
-                type="button"
-                className="rounded border px-2 py-1 text-sm"
-                onClick={() => setSelectedSessionId(null)}
-              >
-                닫기
-              </button>
+    <div className="flex min-h-screen flex-col">
+      <AppHeader
+        connected={connected}
+        lastUpdated={lastUpdated}
+        intervalMs={filters.intervalMs}
+        onIntervalChange={(intervalMs) => setFilters((f) => ({ ...f, intervalMs }))}
+      />
+      <div className="flex flex-1">
+        <Sidebar filters={filters} onChange={setFilters} />
+        <main className="flex-1 p-4">
+          {!connected && (
+            <ConnectionError error={health.status === 'error' ? health.error : undefined} />
+          )}
+          {connected && error && <p className="text-block-text">조회 실패: {error}</p>}
+          {stats && (
+            <div className="mt-4 space-y-4">
+              <Kpi stats={stats} />
+              <Charts stats={stats} />
             </div>
-            <SessionDetail key={selectedSessionId} sessionId={selectedSessionId} />
+          )}
+          <div className="mt-4">
+            <EventTable
+              rows={filteredEvents}
+              selectedSessionId={selectedSessionId}
+              onSelect={setSelectedSessionId}
+            />
           </div>
-        )}
-      </main>
+          {selectedSessionId && (
+            <div className="mt-4">
+              <div className="mb-2 flex items-center justify-between">
+                <h2 className="font-semibold">세션 상세</h2>
+                <button
+                  type="button"
+                  className="rounded border px-2 py-1 text-sm"
+                  onClick={() => setSelectedSessionId(null)}
+                >
+                  닫기
+                </button>
+              </div>
+              <SessionDetail key={selectedSessionId} sessionId={selectedSessionId} />
+            </div>
+          )}
+        </main>
+      </div>
     </div>
   )
 }

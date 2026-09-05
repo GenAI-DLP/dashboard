@@ -1,7 +1,6 @@
 import type { Direction, VerdictAction } from '../api/types'
 import { ENTITY_TYPES, PURPOSES, VERDICT_EMOJI, WINDOWS } from '../lib/constants'
 import type { Filters } from '../lib/filters'
-import { REFRESH_OPTIONS } from '../lib/filters'
 
 const DIRECTIONS: Direction[] = ['input', 'output']
 const VERDICTS: VerdictAction[] = ['allow', 'transform', 'block']
@@ -19,10 +18,6 @@ export function Sidebar({
 }) {
   const set = <K extends keyof Filters>(key: K, value: Filters[K]) =>
     onChange({ ...filters, [key]: value })
-
-  const refreshLabel =
-    Object.entries(REFRESH_OPTIONS).find(([, v]) => v === filters.intervalMs)?.[0] ??
-    '끄기'
 
   return (
     <aside className="w-64 shrink-0 space-y-4 border-r p-4 text-sm">
@@ -119,21 +114,6 @@ export function Sidebar({
         />{' '}
         fail-closed 만
       </label>
-
-      <fieldset>
-        <legend className="mb-1 text-xs text-gray-500">자동 새로고침</legend>
-        {Object.keys(REFRESH_OPTIONS).map((label) => (
-          <label key={label} className="mr-3 inline-flex items-center gap-1">
-            <input
-              type="radio"
-              name="refresh"
-              checked={refreshLabel === label}
-              onChange={() => set('intervalMs', REFRESH_OPTIONS[label])}
-            />
-            {label}
-          </label>
-        ))}
-      </fieldset>
     </aside>
   )
 }
