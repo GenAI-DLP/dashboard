@@ -100,19 +100,11 @@ function App() {
                 onSelect={setSelectedSessionId}
               />
               {selectedSessionId && (
-                <div>
-                  <div className="mb-2 flex items-center justify-between">
-                    <h2 className="font-semibold">세션 상세</h2>
-                    <button
-                      type="button"
-                      className="rounded border px-2 py-1 text-sm"
-                      onClick={() => setSelectedSessionId(null)}
-                    >
-                      닫기
-                    </button>
-                  </div>
-                  <SessionDetail key={selectedSessionId} sessionId={selectedSessionId} />
-                </div>
+                <SessionDetail
+                  key={selectedSessionId}
+                  sessionId={selectedSessionId}
+                  onClose={() => setSelectedSessionId(null)}
+                />
               )}
             </>
           )}

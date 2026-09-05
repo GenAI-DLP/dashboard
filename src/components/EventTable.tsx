@@ -12,8 +12,9 @@ function uniqActions(transforms: Event['transforms']): string {
   return Array.from(new Set(transforms.map((t) => t.action))).join(', ')
 }
 
+// 0.8 = dlp-server/app/config.yaml risk.hard_block 실제 값
 function riskColorClass(risk: number): string {
-  if (risk >= 0.6) return 'bg-block'
+  if (risk >= 0.8) return 'bg-block'
   if (risk >= 0.3) return 'bg-transform'
   return 'bg-allow'
 }
@@ -29,15 +30,8 @@ export function EventTable({
 }) {
   return (
     <div className="overflow-hidden rounded-xl bg-surface">
-      <div className="p-4 pb-0">
-        <p className="text-xs text-faint">
-          🔒 원문 미저장 — 엔티티는 타입·마스킹 프리뷰만 표시
-        </p>
-      </div>
       {rows.length === 0 ? (
-        <p className="p-4 text-sm text-muted">
-          표시할 이벤트가 없습니다. dlp-server 에서 `python scripts/demo_seed.py` 실행.
-        </p>
+        <p className="p-4 text-sm text-muted">표시할 이벤트가 없습니다만.</p>
       ) : (
         <Table>
           <thead>
