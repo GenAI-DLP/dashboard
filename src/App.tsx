@@ -10,15 +10,19 @@ import { ConnectionError } from './components/Header'
 import { Kpi } from './components/Kpi'
 import { SessionDetail } from './components/SessionDetail'
 import { Sidebar } from './components/Sidebar'
+import { useEventStream } from './hooks/useEventStream'
 import { useHealth } from './hooks/useHealth'
 import { usePolling } from './hooks/usePolling'
 import { clientFilter, defaultFilters, type Filters } from './lib/filters'
 import { windowSince } from './lib/format'
+import { incrementStats } from './lib/liveStats'
 
+const EVENTS_CAP = 300
 type Tab = 'overview' | 'events'
 
 function App() {
   const health = useHealth()
+  const connected = health.status === 'ok'
   const [filters, setFilters] = useState<Filters>(defaultFilters)
   const [stats, setStats] = useState<Stats | null>(null)
   const [events, setEvents] = useState<Event[]>([])
@@ -27,27 +31,46 @@ function App() {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const [tab, setTab] = useState<Tab>('overview')
 
-  const refresh = useCallback(() => {
-    Promise.all([
-      getStats(filters.window),
-      getEvents({
-        limit: 300,
-        direction: filters.directions.length === 1 ? filters.directions[0] : null,
-        verdict: filters.verdicts.length === 1 ? filters.verdicts[0] : null,
-        sessionId: filters.sessionQ || null,
-        since: windowSince(filters.window),
-      }),
-    ])
-      .then(([s, rows]) => {
+  const direction = filters.directions.length === 1 ? filters.directions[0] : null
+  const verdict = filters.verdicts.length === 1 ? filters.verdicts[0] : null
+  const sessionId = filters.sessionQ || null
+
+  const refreshStats = useCallback(() => {
+    getStats(filters.window)
+      .then((s) => {
         setStats(s)
-        setEvents(rows)
         setError(null)
         setLastUpdated(new Date())
       })
       .catch((exc) => setError(String(exc)))
-  }, [filters])
+  }, [filters.window])
 
-  usePolling(refresh, filters.intervalMs, health.status === 'ok')
+  usePolling(refreshStats, filters.intervalMs, connected)
+
+  const loadEvents = useCallback(() => {
+    getEvents({
+      limit: EVENTS_CAP,
+      direction,
+      verdict,
+      sessionId,
+      since: windowSince(filters.window),
+    })
+      .then(setEvents)
+      .catch((exc) => setError(String(exc)))
+  }, [direction, verdict, sessionId, filters.window])
+
+  usePolling(loadEvents, null, connected) // null = 필터 변경 시 1회만, 이후는 SSE가 이어받음
+
+  useEventStream(
+    { direction, verdict, sessionId },
+    (ev) => {
+      setEvents((prev) =>
+        prev.some((e) => e.event_id === ev.event_id) ? prev : [ev, ...prev].slice(0, EVENTS_CAP),
+      )
+      setStats((prev) => (prev ? incrementStats(prev, ev) : prev))
+    },
+    connected,
+  )
 
   const filteredEvents = clientFilter(events, filters)
   const selectedVisible =
@@ -55,8 +78,6 @@ function App() {
   const visibleSessionId = selectedVisible ? selectedSessionId : null
 
   if (health.status === 'loading') return null
-
-  const connected = health.status === 'ok'
 
   return (
     <div className="flex min-h-screen flex-col">

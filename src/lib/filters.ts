@@ -9,14 +9,15 @@ export interface Filters {
   entities: string[]
   sessionQ: string
   onlyFail: boolean
-  intervalMs: number | null
+  intervalMs: number
 }
 
-// 사이드바 "자동 새로고침" 라디오 → 폴링 주기(ms). 끄기 = null.
-export const REFRESH_OPTIONS: Record<string, number | null> = {
-  끄기: null,
-  '3초': 3000,
+// 헤더 "통계 갱신 주기" 옵션 → /stats 폴링 주기(ms).
+export const STATS_REFRESH_OPTIONS: Record<string, number> = {
   '5초': 5000,
+  '30초': 30000,
+  '1분': 60000,
+  '5분': 300000,
 }
 
 export const defaultFilters: Filters = {
@@ -27,7 +28,7 @@ export const defaultFilters: Filters = {
   entities: [],
   sessionQ: '',
   onlyFail: false,
-  intervalMs: REFRESH_OPTIONS['5초'],
+  intervalMs: STATS_REFRESH_OPTIONS['5초'],
 }
 
 /** /events 파라미터에 없는 축(목적·엔티티) + 다중 선택 값은 여기서 거른다. */
